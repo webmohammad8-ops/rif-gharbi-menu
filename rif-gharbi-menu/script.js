@@ -128,22 +128,60 @@
   }
 
   /* تمييز القسم الحالي في الشريط العلوي */
-  function watch() {
-    const chips = Array.from(document.querySelectorAll(".chip"));
-    const setOn = (id) => {
-      chips.forEach((c) => c.classList.toggle("on", c.dataset.id === id));
-      const on = chips.find((c) => c.dataset.id === id);
-      if (on) on.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-    };
-    if (!("IntersectionObserver" in window)) return setOn(MENU[0].id);
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) setOn(e.target.id); }),
-      { rootMargin: "-25% 0px -65% 0px" }
-    );
-    MENU.forEach((s) => io.observe(document.getElementById(s.id)));
+ function watch() {
+  const chips = Array.from(document.querySelectorAll(".chip"));
+
+  const setOn = (id) => {
+    chips.forEach((c) => {
+      c.classList.toggle("on", c.dataset.id === id);
+    });
+
+    const on = chips.find((c) => c.dataset.id === id);
+
+    if (on) {
+      on.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: "auto"
+      });
+    }
+  };
+
+  if (!("IntersectionObserver" in window)) {
     setOn(MENU[0].id);
+    return;
   }
 
+  let currentId = "";
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((e) => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+      if (!visible.length) return;
+
+      const id = visible[0].target.id;
+
+      if (id !== currentId) {
+        currentId = id;
+        setOn(id);
+      }
+    },
+    {
+      rootMargin: "-15% 0px -70% 0px",
+      threshold: [0, 0.25, 0.5]
+    }
+  );
+
+  MENU.forEach((s) => {
+    const section = document.getElementById(s.id);
+    if (section) io.observe(section);
+  });
+
+  setOn(MENU[0].id);
+}
   function init() {
     document.title = SHOP.name + " | المنيو";
     $("#heroImg").src = IMG.hero;
